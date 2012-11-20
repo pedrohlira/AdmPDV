@@ -1,9 +1,6 @@
 package br.com.phdss;
 
-import java.io.Console;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
+import java.io.*;
 import java.util.Properties;
 import org.jasypt.util.password.ConfigurablePasswordEncryptor;
 import org.jasypt.util.text.BasicTextEncryptor;
@@ -31,12 +28,9 @@ public class AdmPDV {
      * Metodo de acao externa usado para criptografar o arquivo auxiliar, senha
      * e gerar cacerts.
      *
-     * <p/>
      * [opcao] = arquivo, para criptogravar o arquivo auxiliar.properties.
-     * <p/>
-     * [opcao] = senha, para criptogravar uma senha informada.
-     * <p/>
-     * [opcao] = cacerts, para gerar o arquivo NFeCacerts de todos os estados.
+     * [opcao] = senha, para criptogravar uma senha informada. [opcao] =
+     * cacerts, para gerar o arquivo NFeCacerts de todos os estados.
      *
      * @param args um array sendo o primeiro parametro uma das opcoes acima.
      */
@@ -55,17 +49,25 @@ public class AdmPDV {
             }
 
             if (args[0].equalsIgnoreCase("arquivo")) {
-                String path = console.readLine("Informe o path do arquivo auxiliar.properties: ");
+                String path = console.readLine("Informe o path do arquivo:");
                 File arquivo = new File(path);
 
                 try (FileInputStream fis = new FileInputStream(arquivo)) {
-                    Properties prop = new Properties();
-                    prop.load(fis);
-
                     // recuperando os valores
                     StringBuilder sb = new StringBuilder();
-                    for (String chave : prop.stringPropertyNames()) {
-                        sb.append(chave).append("=").append(prop.getProperty(chave)).append("\n");
+
+                    if (arquivo.getName().endsWith(".properties")) {
+                        Properties prop = new Properties();
+                        prop.load(fis);
+                        for (String chave : prop.stringPropertyNames()) {
+                            sb.append(chave).append("=").append(prop.getProperty(chave)).append("\n");
+                        }
+                    } else {
+                        try (BufferedReader br = new BufferedReader(new FileReader(arquivo))) {
+                            while (br.ready()) {
+                                sb.append(br.readLine()).append("\n");
+                            }
+                        }
                     }
 
                     // salva o arquivo
@@ -80,7 +82,7 @@ public class AdmPDV {
 
                     System.out.println("Arquivo criptografado: " + arquivo.getAbsolutePath().replace("properties", "txt"));
                 } catch (Exception ex) {
-                    System.out.println("Nao foi possivel ler ou gerar o arquivo auxiliar.");
+                    System.out.println("Nao foi possivel ler ou gerar o arquivo criptografado.");
                     ex.printStackTrace(System.out);
                 }
                 System.exit(0);
