@@ -6,8 +6,7 @@ import org.jasypt.util.password.ConfigurablePasswordEncryptor;
 import org.jasypt.util.text.BasicTextEncryptor;
 
 /**
- * Classe que contem a chave privada e criptograva o arquivo auxiliar ou gera
- * uma senha usando a chave privada ou gera o cacerts de todos os estados.
+ * Classe que contem a chave privada e criptograva o arquivo auxiliar ou gera uma senha usando a chave privada ou gera o cacerts de todos os estados.
  *
  * @author Pedro H. Lira
  */
@@ -25,17 +24,15 @@ public class AdmPDV {
     }
 
     /**
-     * Metodo de acao externa usado para criptografar o arquivo auxiliar, senha
-     * e gerar cacerts.
+     * Metodo de acao externa usado para criptografar o arquivo auxiliar, senha e gerar cacerts.
      *
-     * [opcao] = arquivo, para criptogravar o arquivo auxiliar.properties.
-     * [opcao] = senha, para criptogravar uma senha informada. [opcao] =
-     * cacerts, para gerar o arquivo NFeCacerts de todos os estados.
+     * [opcao] = arquivo, para criptogravar o arquivo auxiliar.properties. [opcao] = senha, para criptogravar uma senha informada. [opcao] = cacerts, para gerar o arquivo NFeCacerts de todos os
+     * estados.
      *
      * @param args um array sendo o primeiro parametro uma das opcoes acima.
      */
     public static void main(String[] args) {
-        if (args.length == 1) {
+        if (args.length == 2) {
             Console console = System.console();
             if (console == null) {
                 System.out.println("Erro ao recuperar o console.");
@@ -48,61 +45,73 @@ public class AdmPDV {
                 }
             }
 
-            if (args[0].equalsIgnoreCase("arquivo")) {
-                String path = console.readLine("Informe o path do arquivo:");
-                File arquivo = new File(path);
+            if (args[0].contains("-a")) {
+                File arquivo = new File(args[1]);
 
-                try (FileInputStream fis = new FileInputStream(arquivo)) {
+                try {
                     // recuperando os valores
                     StringBuilder sb = new StringBuilder();
-
-                    if (arquivo.getName().endsWith(".properties")) {
-                        Properties prop = new Properties();
-                        prop.load(fis);
-                        for (String chave : prop.stringPropertyNames()) {
-                            sb.append(chave).append("=").append(prop.getProperty(chave)).append("\n");
-                        }
-                    } else {
-                        try (BufferedReader br = new BufferedReader(new FileReader(arquivo))) {
-                            while (br.ready()) {
-                                sb.append(br.readLine()).append("\n");
-                            }
+                    try (BufferedReader br = new BufferedReader(new FileReader(arquivo))) {
+                        while (br.ready()) {
+                            sb.append(br.readLine()).append("\n");
                         }
                     }
 
                     // salva o arquivo
-                    try (FileWriter outArquivo = new FileWriter(arquivo.getAbsolutePath().replace("properties", "txt"))) {
-                        BasicTextEncryptor encryptor = new BasicTextEncryptor();
-                        encryptor.setPassword(VALOR);
-                        String dados = encryptor.encrypt(sb.toString());
-
-                        outArquivo.write(dados);
-                        outArquivo.flush();
+                    if (args[0].contains("-c")) {
+                        try (FileWriter outArquivo = new FileWriter(arquivo.getAbsolutePath().replace("properties", "txt"))) {
+                            BasicTextEncryptor encryptor = new BasicTextEncryptor();
+                            encryptor.setPassword(VALOR);
+                            String dados = encryptor.encrypt(sb.toString());
+                            outArquivo.write(dados);
+                            outArquivo.flush();
+                            System.out.println("Arquivo criptografado: " + arquivo.getAbsolutePath().replace("properties", "txt"));
+                        }
+                        System.exit(0);
+                    } else if (args[0].contains("-d")) {
+                        try (FileWriter outArquivo = new FileWriter(arquivo.getAbsolutePath().replace("txt", "properties"))) {
+                            BasicTextEncryptor encryptor = new BasicTextEncryptor();
+                            encryptor.setPassword(VALOR);
+                            String dados = encryptor.decrypt(sb.toString());
+                            outArquivo.write(dados);
+                            outArquivo.flush();
+                            System.out.println("Arquivo descriptografado: " + arquivo.getAbsolutePath().replace("txt", "properties"));
+                        }
+                        System.exit(0);
                     }
-
-                    System.out.println("Arquivo criptografado: " + arquivo.getAbsolutePath().replace("properties", "txt"));
                 } catch (Exception ex) {
-                    System.out.println("Nao foi possivel ler ou gerar o arquivo criptografado.");
+                    System.out.println("Nao foi possivel ler ou gerar o arquivo.");
                     ex.printStackTrace(System.out);
                 }
-                System.exit(0);
-            } else if (args[0].equalsIgnoreCase("senha")) {
-                char pws[] = console.readPassword("Informe a senha para criptografar: ");
-                BasicTextEncryptor seguranca = new BasicTextEncryptor();
-                seguranca.setPassword(VALOR);
-                String senha = seguranca.encrypt(new String(pws));
-                System.out.println("Senha criptografada: " + senha);
-                System.exit(0);
-            } else if (args[0].equalsIgnoreCase("cacerts")) {
-                Cacerts.gerar();
-                System.exit(0);
+            } else if (args[0].contains("-t")) {
+                char txt[] = args[1].toCharArray();
+                if (args[0].contains("-c")) {
+                    BasicTextEncryptor seguranca = new BasicTextEncryptor();
+                    seguranca.setPassword(VALOR);
+                    String texto = seguranca.encrypt(new String(txt));
+                    System.out.println("Texto criptografado: " + texto);
+                    System.exit(0);
+                } else if (args[0].contains("-d")) {
+                    BasicTextEncryptor seguranca = new BasicTextEncryptor();
+                    seguranca.setPassword(VALOR);
+                    String texto = seguranca.decrypt(new String(txt));
+                    System.out.println("Texto descriptografado: " + texto);
+                    System.exit(0);
+                }
             }
+        } else if (args[0].equalsIgnoreCase("-cacerts")) {
+            Cacerts.gerar();
+            System.exit(0);
         }
 
-        System.out.println("Falta a informar a [opcao] de utilizacao.");
-        System.out.println("\t[opcao] = arquivo, para criptogravar o arquivo auxiliar.properties.");
-        System.out.println("\t[opcao] = senha, para criptogravar uma senha informada.");
-        System.out.println("\t[opcao] = cacerts, para gerar o arquivo NFeCacerts de todos os estados.");
+        System.out.println("Falta informar a [OPCAO...] [ARQUIVO | TEXTO] de utilizacao.");
+        System.out.println("[OPCAO]");
+        System.out.println("\t-a = arquivo, realiza a acao em um arquivo.");
+        System.out.println("\t-t = texto, realiza a acao em um texto informado.");
+        System.out.println("\t-c = criptografar, realiza a criptografia de um arquivo ou texto.");
+        System.out.println("\t-d = descriptografar, realiza a descriptografia de um arquivo ou texto.");
+        System.out.println("\t-cacerts = cacerts, para gerar o arquivo NFeCacerts de todos os estados.");
+        System.out.println("Exemplo:\n\tjava -jar AdmPDV -a-c auxiliar.properties");
     }
 
     /**
