@@ -13,11 +13,6 @@ import org.jasypt.util.text.BasicTextEncryptor;
 public class AdmPDV {
 
     /**
-     * Chave de 1024 bits RSA em base64.
-     */
-    private static final String VALOR = "MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAKoKq4/wwLUaboZ0FJWcHw70RrPpgXxYa87Zn6hx0ddZVkah/7GZLK11IyfTv2SPPu5yBoL2zSgLcZmQTbaRE8FIV/xp6FVOKl6vKVLJToTRL6sAK+y4tn3v77SMhO3jcAF+UEfkuYA0NhDuP6BSX8xeKsf0QtKXfOUPZKVRWDRJAgMBAAECgYBqmfHgdXB6mS19QTy+ZnfaKi5BEDzLNauwrCI5udFyDmHWOi1Qq9SkkfEOQOOWKW+skPOgGxWW60W2ng76S41z8zgE60hPpHbG377L97+gHx2W2pQqpKqT+HY3nKKKg5LXaOXcJpKg+qWxHuB5HIg1++v69yIphwy3H9ezEMom+QJBANWXzXvegBvAgPP1CSjQqOohljJu1DQvNkycDR08igt6u1hrKE+5TnqtH/oTct2HMr3Dytt8WUwZhIMzRfRkpQMCQQDLzU356B5EbjT43drzk3sVUIO8gqFnZd27dr7h2rhez09Fhvs9uhNCrxAau0MyHjuQqdcIK1jMo5p9q3292IHDAkEAtat+LQNctz4O8HDUL5D6etnCZHb7qr8VUifQx7M8PvNO8a+DA/w7EgC6l/t+0Yky0VD8855aXW2+1dEAiRQpfQJADeQhg34pyfpFDA17Jg0QX6SMRiYVQEn2Mhfm7NgOpw+0VIXdzBhJxcrO6zOGYf0jjDm3WWwy8kfYeOZefLksJwJBANO/nX1TLdcumFQnV0C4zfBWU6daCYYPO7zhYS83SCr66uyT7agJOAB91jEDPxUjrpynj5IpW2kh7vNy1zpA/zc=";
-
-    /**
      * Construtor padrao.
      */
     private AdmPDV() {
@@ -61,7 +56,7 @@ public class AdmPDV {
                     if (args[0].contains("-c")) {
                         try (FileWriter outArquivo = new FileWriter(arquivo.getAbsolutePath().replace("properties", "txt"))) {
                             BasicTextEncryptor encryptor = new BasicTextEncryptor();
-                            encryptor.setPassword(VALOR);
+                            encryptor.setPassword(ChavePrivada.VALOR);
                             String dados = encryptor.encrypt(sb.toString());
                             outArquivo.write(dados);
                             outArquivo.flush();
@@ -71,7 +66,7 @@ public class AdmPDV {
                     } else if (args[0].contains("-d")) {
                         try (FileWriter outArquivo = new FileWriter(arquivo.getAbsolutePath().replace("txt", "properties"))) {
                             BasicTextEncryptor encryptor = new BasicTextEncryptor();
-                            encryptor.setPassword(VALOR);
+                            encryptor.setPassword(ChavePrivada.VALOR);
                             String dados = encryptor.decrypt(sb.toString());
                             outArquivo.write(dados);
                             outArquivo.flush();
@@ -87,13 +82,13 @@ public class AdmPDV {
                 char txt[] = args[1].toCharArray();
                 if (args[0].contains("-c")) {
                     BasicTextEncryptor seguranca = new BasicTextEncryptor();
-                    seguranca.setPassword(VALOR);
+                    seguranca.setPassword(ChavePrivada.VALOR);
                     String texto = seguranca.encrypt(new String(txt));
                     System.out.println("Texto criptografado: " + texto);
                     System.exit(0);
                 } else if (args[0].contains("-d")) {
                     BasicTextEncryptor seguranca = new BasicTextEncryptor();
-                    seguranca.setPassword(VALOR);
+                    seguranca.setPassword(ChavePrivada.VALOR);
                     String texto = seguranca.decrypt(new String(txt));
                     System.out.println("Texto descriptografado: " + texto);
                     System.exit(0);
@@ -127,6 +122,7 @@ public class AdmPDV {
         sha.setPlainDigest(true);
         sha.setStringOutputType("hexadecimal");
         senha = sha.encryptPassword(senha);
+        // crie uma senha com SHA1 e coloque aqui para usar quando o utilizar o aplicativo
         return senha.equals("852A0B1988AE0DF88DA242C7277360FBF5639A8E");
     }
 }
