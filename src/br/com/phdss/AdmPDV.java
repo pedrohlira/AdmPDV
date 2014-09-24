@@ -1,7 +1,6 @@
 package br.com.phdss;
 
 import java.io.*;
-import java.util.Properties;
 import org.jasypt.util.password.ConfigurablePasswordEncryptor;
 import org.jasypt.util.text.BasicTextEncryptor;
 
@@ -81,15 +80,11 @@ public class AdmPDV {
             } else if (args[0].contains("-t")) {
                 char txt[] = args[1].toCharArray();
                 if (args[0].contains("-c")) {
-                    BasicTextEncryptor seguranca = new BasicTextEncryptor();
-                    seguranca.setPassword(ChavePrivada.VALOR);
-                    String texto = seguranca.encrypt(new String(txt));
+                    String texto = Util.encriptar(new String(txt));
                     System.out.println("Texto criptografado: " + texto);
                     System.exit(0);
                 } else if (args[0].contains("-d")) {
-                    BasicTextEncryptor seguranca = new BasicTextEncryptor();
-                    seguranca.setPassword(ChavePrivada.VALOR);
-                    String texto = seguranca.decrypt(new String(txt));
+                    String texto = Util.descriptar(new String(txt));
                     System.out.println("Texto descriptografado: " + texto);
                     System.exit(0);
                 }
@@ -106,7 +101,7 @@ public class AdmPDV {
         System.out.println("\t-c = criptografar, realiza a criptografia de um arquivo ou texto.");
         System.out.println("\t-d = descriptografar, realiza a descriptografia de um arquivo ou texto.");
         System.out.println("\t-cacerts = cacerts, para gerar o arquivo NFeCacerts de todos os estados.");
-        System.out.println("Exemplo:\n\tjava -jar AdmPDV -a-c auxiliar.properties");
+        System.out.println("Exemplo:\n\tjava -jar AdmPDV.jar -a-c auxiliar.properties");
     }
 
     /**

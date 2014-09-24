@@ -3,6 +3,7 @@ package br.com.phdss;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
@@ -16,11 +17,12 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.swing.JComboBox;
 import javax.swing.text.MaskFormatter;
 import javax.xml.bind.DatatypeConverter;
@@ -35,7 +37,7 @@ import org.jasypt.util.text.BasicTextEncryptor;
 public class Util {
 
     // tabela com vinculos das letras
-    private static Map<String, String> config;
+    private static Properties config;
     private static final int[] pesoCPF = {11, 10, 9, 8, 7, 6, 5, 4, 3, 2};
     private static final int[] pesoCNPJ = {6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
     public static final String[] OPCOES = {"Sim", "Não"};
@@ -81,6 +83,18 @@ public class Util {
                 // pula o item
             }
         }
+    }
+
+    /**
+     * Metodo que verifica se existe prefixo definido 't.', 't1.' e seguintes.
+     *
+     * @param campo valor a ser procurado por um prefixo.
+     * @return o mesmo valor se tiver prefixo, 't.campo' caso contrario.
+     */
+    public static String tratarPrefixo(String campo) {
+        // valida se o filtro ja tem prefixo
+        Matcher mat = Pattern.compile("^t\\d+\\.").matcher(campo);
+        return mat.find() ? campo : "t." + campo;
     }
 
     /**
@@ -348,15 +362,11 @@ public class Util {
      *
      * @return Um mapa de String contendo chave/valor.
      */
-    public static Map<String, String> getConfig() {
+    public static Properties getConfig() {
         if (config == null) {
-            Properties props = new Properties();
+            config = new Properties();
             try (FileInputStream fis = new FileInputStream("conf" + System.getProperty("file.separator") + "config.properties")) {
-                props.load(fis);
-                config = new HashMap<>();
-                for (String chave : props.stringPropertyNames()) {
-                    config.put(chave, props.getProperty(chave));
-                }
+                config.load(fis);
             } catch (Exception ex) {
                 config = null;
             }
@@ -442,6 +452,51 @@ public class Util {
     }
 
     /**
+     * Metodo que gera um codigo hash usando a chave privada com os dados de
+     * todos os campos do registro.
+     *
+     * @param dado o objeto contendo os dados.
+     * @return a String com o hash deste registro.
+     */
+    public static String encriptar(Object dado) {
+        StringBuilder sb = new StringBuilder();
+        for (Field campo : dado.getClass().getDeclaredFields()) {
+            if (!campo.getName().toLowerCase().equals("ead")) {
+                try {
+                    if (campo.getType() == Integer.class) {
+                        sb.append(campo.getInt(dado));
+                    } else if (campo.getType() == String.class) {
+                        sb.append(campo.get(dado).toString());
+                    } else if (campo.getType() == Boolean.class) {
+                        sb.append(campo.getBoolean(dado));
+                    } else if (campo.getType() == Double.class) {
+                        sb.append(campo.getDouble(dado));
+                    } else if (campo.getType() == Character.class) {
+                        sb.append(campo.getChar(dado));
+                    } else if (campo.getType() == Date.class) {
+                        Temporal temp = campo.getAnnotation(Temporal.class);
+                        Date data = (Date) campo.get(dado);
+                        if (temp.value() == TemporalType.TIME) {
+                            sb.append(getHora(data));
+                        } else if (temp.value() == TemporalType.DATE) {
+                            sb.append(getData(data));
+                        } else {
+                            sb.append(getDataHora(data));
+                        }
+                    } else if (campo.getType() != List.class) {
+                        Object obj = campo.get(dado);
+                        Integer id = (Integer) obj.getClass().getMethod("getId").invoke(obj);
+                        sb.append(id);
+                    }
+                } catch (Exception ex) {
+                    // faz nada pula
+                }
+            }
+        }
+        return encriptar(sb.toString());
+    }
+
+    /**
      * Metodo que criptografa um texto passado usando a chave privada.
      *
      * @param texto valor a ser criptografado.
@@ -499,12 +554,22 @@ public class Util {
      * @throws Exception dispara caso nao consiga.
      */
     public static void assinarArquivoEAD(String path) throws Exception {
-        // configurando a chave
-        byte[] privateKeyBytes = DatatypeConverter.parseBase64Binary(ChavePrivada.VALOR);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        KeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
-        PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
+        String ead = gerarEAD(path);
+        try (FileWriter outArquivo = new FileWriter(path, true)) {
+            outArquivo.write(ead);
+            outArquivo.write("\r\n");
+            outArquivo.flush();
+        }
+    }
 
+    /**
+     * Metodo que retorna a assinatura do arquivo.
+     *
+     * @param path path completo do arquivo a gerado a assinatura.
+     * @return retorna a assinatura em EAD.
+     * @throws Exception dispara caso nao consiga.
+     */
+    public static String gerarEAD(String path) throws Exception {
         // lendo dados do arquivo para assinar
         byte[] dados;
         if (new File(path).exists()) {
@@ -515,20 +580,31 @@ public class Util {
         } else {
             throw new Exception("Arquivo nao existe -> " + path);
         }
+        // retornando a assinatura.
+        return gerarEAD(dados);
+    }
+
+    /**
+     * Metodo que retorna a assinatura do array de bytes.
+     *
+     * @param dados os bytes para ser gerado a assinatura.
+     * @return retorna a assinatura em EAD.
+     * @throws Exception dispara caso nao consiga.
+     */
+    public static String gerarEAD(byte[] dados) throws Exception {
+        // configurando a chave
+        byte[] privateKeyBytes = DatatypeConverter.parseBase64Binary(ChavePrivada.VALOR);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        KeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
+        PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
 
         // recuperando assinatura do arquivo
         Signature sig = Signature.getInstance("MD5withRSA");
         sig.initSign(privateKey);
         sig.update(dados);
-        byte[] ass = sig.sign();
 
-        // adicionando a assinatura no arquivo
-        String ead = "EAD" + new BigInteger(1, ass).toString(16);
-        try (FileWriter outArquivo = new FileWriter(path, true)) {
-            outArquivo.write(ead);
-            outArquivo.write("\r\n");
-            outArquivo.flush();
-        }
+        // retornando a assinatura.
+        return "EAD" + new BigInteger(1, sig.sign()).toString(16);
     }
 
     /**
@@ -549,22 +625,20 @@ public class Util {
         } else {
             throw new Exception("Arquivo nao existe -> " + path);
         }
-
-        // gerando o MD5
-        Digester md5 = new Digester("MD5");
-        return new BigInteger(1, md5.digest(dados)).toString(16);
+        return gerarMD5(dados);
     }
 
     /**
-     * Metodo que gera o HASH do cupom.
+     * Metodo que gera o MD5 de um array de bytes informado.
      *
-     * @return um codigo para imprimir no rodape.
+     * @param dados os bytes dos dados a serem usados.
+     * @return o codigo MD5 do arquivo.
+     * @throws Exception dispara caso nao consiga.
      */
-    public static String gerarSHA1() {
-        String data = Util.formataData(new Date(), "ssmmHH");
-        Digester md5 = new Digester("SHA-1");
-        String p1 = new BigInteger(1, md5.digest(data.getBytes())).toString(16).toUpperCase() + data;
-        return p1.substring(0, 8) + " " + p1.substring(8, 16) + " " + p1.substring(16, 24) + " " + p1.substring(24, 32) + " " + p1.substring(32, 44);
+    public static String gerarMD5(byte[] dados) throws Exception {
+        // gerando o MD5
+        Digester md5 = new Digester("MD5");
+        return new BigInteger(1, md5.digest(dados)).toString(16);
     }
 
     /**
