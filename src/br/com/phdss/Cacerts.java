@@ -48,19 +48,24 @@ public class Cacerts {
                 ks.load(in, passphrase);
             }
 
-            /**
-             * AM - 2.00: homnfe.sefaz.am.gov.br BA - 2.00: hnfe.sefaz.ba.gov.br
-             * CE - 2.00: nfeh.sefaz.ce.gov.br GO - 2.00:
-             * homolog.sefaz.go.gov.br MG - 2.00: hnfe.fazenda.mg.gov.br MS -
-             * 2.00: homologacao.nfe.ms.gov.br MT - 2.00:
-             * homologacao.sefaz.mt.gov.br PE - 2.00: nfehomolog.sefaz.pe.gov.br
-             * PR - 2.00: homologacao.nfe2.fazenda.pr.gov.br RS - 2.00:
-             * homologacao.nfe.sefaz.rs.gov.br SP - 2.00:
-             * homologacao.nfe.fazenda.sp.gov.br SCAN	- 2.00:
-             * hom.nfe.fazenda.gov.br SVAN	- 2.00:
-             * hom.sefazvirtual.fazenda.gov.br SVRS - 2.00:
-             * homologacao.nfe.sefazvirtual.rs.gov.br
-             */
+            // HOMOLOGACAO
+            //get("homnfe.sefaz.am.gov.br", 443, ks);
+            //get("hnfe.sefaz.ba.gov.br", 443, ks);
+            //get("nfeh.sefaz.ce.gov.br", 443, ks);
+            //get("homolog.sefaz.go.gov.br", 443, ks);
+            //get("hnfe.fazenda.mg.gov.br", 443, ks);
+            //get("homologacao.nfe.ms.gov.br", 443, ks);
+            //get("homologacao.sefaz.mt.gov.br", 443, ks);
+            //get("nfehomolog.sefaz.pe.gov.br", 443, ks);
+            //get("homologacao.nfe.fazenda.pr.gov.br", 443, ks);
+            //get("homologacao.nfe.sefaz.rs.gov.br", 443, ks);
+            //get("homologacao.nfe.fazenda.sp.gov.br", 443, ks);
+            //get("hom.sefazvirtual.fazenda.gov.br", 443, ks);
+            //get("homologacao.nfe.sefazvirtual.rs.gov.br", 443, ks);
+            //get("hom.svc.fazenda.gov.br", 443, ks);
+            //get("homologacao.nfe.sefazvirtual.rs.gov.br", 443, ks);
+
+            // PRODUCAO
             get("nfe.sefaz.am.gov.br", 443, ks);
             get("nfe.sefaz.ba.gov.br", 443, ks);
             get("nfe.sefaz.ce.gov.br", 443, ks);
@@ -69,11 +74,12 @@ public class Cacerts {
             get("nfe.fazenda.ms.gov.br", 443, ks);
             get("nfe.sefaz.mt.gov.br", 443, ks);
             get("nfe.sefaz.pe.gov.br", 443, ks);
-            get("nfe2.fazenda.pr.gov.br", 443, ks);
+            get("nfe.fazenda.pr.gov.br", 443, ks);
             get("nfe.sefaz.rs.gov.br", 443, ks);
             get("nfe.fazenda.sp.gov.br", 443, ks);
-            get("www.scan.fazenda.gov.br", 443, ks);
             get("www.sefazvirtual.fazenda.gov.br", 443, ks);
+            get("nfe.sefazvirtual.rs.gov.br", 443, ks);
+            get("www.svc.fazenda.gov.br", 443, ks);
             get("nfe.sefazvirtual.rs.gov.br", 443, ks);
 
             File cafile = new File(JSSECACERTS);

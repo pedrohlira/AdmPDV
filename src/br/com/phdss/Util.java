@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -17,12 +17,9 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 import javax.swing.JComboBox;
 import javax.swing.text.MaskFormatter;
 import javax.xml.bind.DatatypeConverter;
@@ -79,7 +76,7 @@ public class Util {
                         set.invoke(bloco, new Object[]{valor.trim()});
                     }
                 }
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+            } catch (Exception ex) {
                 // pula o item
             }
         }
@@ -452,51 +449,6 @@ public class Util {
     }
 
     /**
-     * Metodo que gera um codigo hash usando a chave privada com os dados de
-     * todos os campos do registro.
-     *
-     * @param dado o objeto contendo os dados.
-     * @return a String com o hash deste registro.
-     */
-    public static String encriptar(Object dado) {
-        StringBuilder sb = new StringBuilder();
-        for (Field campo : dado.getClass().getDeclaredFields()) {
-            if (!campo.getName().toLowerCase().equals("ead")) {
-                try {
-                    if (campo.getType() == Integer.class) {
-                        sb.append(campo.getInt(dado));
-                    } else if (campo.getType() == String.class) {
-                        sb.append(campo.get(dado).toString());
-                    } else if (campo.getType() == Boolean.class) {
-                        sb.append(campo.getBoolean(dado));
-                    } else if (campo.getType() == Double.class) {
-                        sb.append(campo.getDouble(dado));
-                    } else if (campo.getType() == Character.class) {
-                        sb.append(campo.getChar(dado));
-                    } else if (campo.getType() == Date.class) {
-                        Temporal temp = campo.getAnnotation(Temporal.class);
-                        Date data = (Date) campo.get(dado);
-                        if (temp.value() == TemporalType.TIME) {
-                            sb.append(getHora(data));
-                        } else if (temp.value() == TemporalType.DATE) {
-                            sb.append(getData(data));
-                        } else {
-                            sb.append(getDataHora(data));
-                        }
-                    } else if (campo.getType() != List.class) {
-                        Object obj = campo.get(dado);
-                        Integer id = (Integer) obj.getClass().getMethod("getId").invoke(obj);
-                        sb.append(id);
-                    }
-                } catch (Exception ex) {
-                    // faz nada pula
-                }
-            }
-        }
-        return encriptar(sb.toString());
-    }
-
-    /**
      * Metodo que criptografa um texto passado usando a chave privada.
      *
      * @param texto valor a ser criptografado.
@@ -560,6 +512,47 @@ public class Util {
             outArquivo.write("\r\n");
             outArquivo.flush();
         }
+    }
+
+    /**
+     * Metodo que gera uma assinatura usando a chave privada com os dados de
+     * todos os campos do registro.
+     *
+     * @param dado o objeto contendo os dados.
+     * @return a String com a assinatura deste registro.
+     * @throws Exception dispara caso nao consiga.
+     */
+    public static String gerarEAD(Object dado) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        for (Field campo : dado.getClass().getDeclaredFields()) {
+            campo.setAccessible(true);
+            boolean isTransient = Modifier.isTransient(campo.getModifiers());
+            if (!campo.getName().toLowerCase().equals("ead") && !campo.getName().toLowerCase().endsWith("id") && !isTransient) {
+                try {
+                    if (campo.getType() == int.class) {
+                        sb.append(campo.getInt(dado));
+                    } else if(campo.getType() == long.class) {
+                        sb.append(campo.getLong(dado));
+                    } else if (campo.getType() == boolean.class) {
+                        sb.append(campo.getBoolean(dado));
+                    } else if(campo.getType() == float.class) {
+                        sb.append(campo.getFloat(dado));
+                    } else if (campo.getType() == double.class) {
+                        sb.append(campo.getDouble(dado));
+                    } else if (campo.getType() == char.class) {
+                        sb.append(campo.getChar(dado));
+                    } else if(campo.getType() == Date.class){
+                        Date data = (Date) campo.get(dado);
+                        sb.append(Util.getDataHora(data));
+                    } else if (campo.getType() == Integer.class || campo.getType() == Long.class || campo.getType() == String.class || campo.getType() == Boolean.class || campo.getType() == Float.class || campo.getType() == Double.class || campo.getType() == Character.class) {
+                        sb.append(campo.get(dado).toString());
+                    }
+                } catch (Exception ex) {
+                    // nada
+                }
+            }
+        }
+        return gerarEAD(sb.toString().toLowerCase().getBytes());
     }
 
     /**
