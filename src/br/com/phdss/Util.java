@@ -531,17 +531,17 @@ public class Util {
                 try {
                     if (campo.getType() == int.class) {
                         sb.append(campo.getInt(dado));
-                    } else if(campo.getType() == long.class) {
+                    } else if (campo.getType() == long.class) {
                         sb.append(campo.getLong(dado));
                     } else if (campo.getType() == boolean.class) {
                         sb.append(campo.getBoolean(dado));
-                    } else if(campo.getType() == float.class) {
+                    } else if (campo.getType() == float.class) {
                         sb.append(campo.getFloat(dado));
                     } else if (campo.getType() == double.class) {
                         sb.append(campo.getDouble(dado));
                     } else if (campo.getType() == char.class) {
                         sb.append(campo.getChar(dado));
-                    } else if(campo.getType() == Date.class){
+                    } else if (campo.getType() == Date.class) {
                         Date data = (Date) campo.get(dado);
                         sb.append(Util.getDataHora(data));
                     } else if (campo.getType() == Integer.class || campo.getType() == Long.class || campo.getType() == String.class || campo.getType() == Boolean.class || campo.getType() == Float.class || campo.getType() == Double.class || campo.getType() == Character.class) {
