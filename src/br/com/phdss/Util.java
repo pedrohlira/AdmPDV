@@ -618,13 +618,7 @@ public class Util {
         } else {
             throw new Exception("Arquivo nao existe -> " + path);
         }
-        if (path.endsWith("OpenPDV.jar")) {
-            return "de9b5904c56f13c9399766f13817c46e";
-        } else if (path.endsWith("arquivoMD5.txt")) {
-            return "bdb1cfd53a026ec2f8c0f831776793f8";
-        } else {
-            return gerarMD5(dados);
-        }
+        return gerarMD5(dados);
     }
 
     /**
